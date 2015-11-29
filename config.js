@@ -9,6 +9,8 @@ config.mail.strings = {};
 
 config.vk.appId = 5167405;
 config.vk.appSecret = process.env.VK_APP_SECRET || "vk_app_secret";
+//You need to get a token for STANDALONE APPLICATIONS with permissions 'messages' and 'offline'
+//See more: https://vk.com/dev/permissions
 config.vk.token = "user_access_token_who_sends_messages_to_vk";
 config.vk.peerId = "user_or_chat_id";
 
