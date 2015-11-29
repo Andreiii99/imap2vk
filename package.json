@@ -1,0 +1,14 @@
+{
+  "name": "MailToVK",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "start": "node start.js"
+  },
+  "dependencies": {
+    "mail-listener2":"*",
+    "vksdk":"5.2.0",
+    "winston": "2.1.1",
+    "strftime": "0.9.2"
+  }
+}
