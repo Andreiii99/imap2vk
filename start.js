@@ -100,13 +100,14 @@ function cutOffSignature(messageBody) {
     var lcMessage = messageBody.toLowerCase();
     config.mail.strings.cutOffFilters.forEach(function (filter) {
         var pos = lcMessage.search(filter.toLowerCase());
-        if ((pos != -1) && (minPos!= -1 || pos < minPos)) {
+        console.log(pos);
+        if ((pos != -1) && (minPos == -1 || pos < minPos)) {
             minPos = pos;
-           isCutOff = true;
+            isCutOff = true;
         }
-        if (pos != -1) messageBody = messageBody.substr(0, pos);
     });
-    if (isCutOff) return messageBody.substr(0, minPos);
+    if (isCutOff) return messageBody.substr(0, minPos).replace(/^\s+|\s+$/g, '')
+        + eol + "-----------8<-----------";
     return messageBody;
 }
 
@@ -122,7 +123,7 @@ mailListener.on("server:disconnected", function () {
 
 mailListener.on("mail", function (mail, seqno, attributes) {
     var message = extractMail(mail);
-    logger.log("info", "Got new email: %s", eol+message);
+    logger.log("info", "Got new email: %s", eol + message);
     sendToVK("&#9993;&#9993;&#9993;" + eol + message);
 });
 
@@ -131,5 +132,4 @@ mailListener.on("error", function (err) {
 });
 
 /* ========= Start mail server listening ============= */
-
 mailListener.start();
