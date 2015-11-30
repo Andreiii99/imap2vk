@@ -90,7 +90,24 @@ var mailListener = new MailListener({
 function extractMail(mail) {
     return config.mail.strings.from + mail.from[0].name + " <" + mail.from[0].address + ">" + eol +
         config.mail.strings.subject + mail.subject + eol +
-        config.mail.strings.body + eol + mail.text;
+        config.mail.strings.body + eol + (config.mail.cutOff ? cutOffSignature(mail.text) : mail.text);
+}
+
+/* Removes signature and everything after it (e.g., replied message) because it's useless */
+function cutOffSignature(messageBody) {
+    var isCutOff = false;
+    var minPos = -1;
+    var lcMessage = messageBody.toLowerCase();
+    config.mail.strings.cutOffFilters.forEach(function (filter) {
+        var pos = lcMessage.search(filter.toLowerCase());
+        if ((pos != -1) && (minPos!= -1 || pos < minPos)) {
+            minPos = pos;
+           isCutOff = true;
+        }
+        if (pos != -1) messageBody = messageBody.substr(0, pos);
+    });
+    if (isCutOff) return messageBody.substr(0, minPos);
+    return messageBody;
 }
 
 
@@ -104,8 +121,8 @@ mailListener.on("server:disconnected", function () {
 });
 
 mailListener.on("mail", function (mail, seqno, attributes) {
-    logger.log("info", "Got new email: %s", mail);
     var message = extractMail(mail);
+    logger.log("info", "Got new email: %s", eol+message);
     sendToVK("&#9993;&#9993;&#9993;" + eol + message);
 });
 
@@ -116,4 +133,3 @@ mailListener.on("error", function (err) {
 /* ========= Start mail server listening ============= */
 
 mailListener.start();
-
