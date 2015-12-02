@@ -84,13 +84,22 @@ var mailListener = new MailListener({
     port: config.mail.port,
     tls: config.mail.tls,
     markSeen: config.mail.markSeen,
-    fetchUnreadOnStart: config.mail.fetchUnreadOnStart
+    fetchUnreadOnStart: config.mail.fetchUnreadOnStart,
+    mailParserOptions: {streamAttachments: true},
+    attachments: true
 });
 
 function extractMail(mail) {
     return config.mail.strings.from + mail.from[0].name + " <" + mail.from[0].address + ">" + eol +
         config.mail.strings.subject + mail.subject + eol +
-        config.mail.strings.body + eol + (config.mail.cutOff ? cutOffSignature(mail.text) : mail.text);
+        config.mail.strings.body + eol + (config.mail.cutOff ? cutOffSignature(mail.text) : mail.text) + eol +
+        (mail.attachments ? config.mail.strings.attachments + extractAttachments(mail.attachments) : "");
+}
+
+function extractAttachments(attachments) {
+    return attachments.map(function (attachment) {
+        return attachment.fileName + " (" + Math.round(attachment.length / 1024) + " КБ)"
+    }).join(", ");
 }
 
 /* Removes signature and everything after it (e.g., replied message) because it's useless */
@@ -100,7 +109,6 @@ function cutOffSignature(messageBody) {
     var lcMessage = messageBody.toLowerCase();
     config.mail.strings.cutOffFilters.forEach(function (filter) {
         var pos = lcMessage.search(filter.toLowerCase());
-        console.log(pos);
         if ((pos != -1) && (minPos == -1 || pos < minPos)) {
             minPos = pos;
             isCutOff = true;
