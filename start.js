@@ -8,6 +8,9 @@ var strftime = require('strftime'); //format dates in logs
 var config = require('./config');
 var eol = require('os').EOL;
 
+var uuid = require("uuid");
+var VkQueue = require("./vk_queue");
+
 /* ========= Setup logging =========*/
 function timestamp() {
     return strftime('%d-%m-%Y %H:%M:%S', new Date());
@@ -56,23 +59,22 @@ var vk = new VK({
 
 vk.setToken(config.vk.token);
 
-function sendToVK(message) {
-    vk.request('messages.send', {'message': message, 'peer_id': config.vk.peerId});
-}
-
-vk.on('done:messages.send', function (resp) {
-    if (resp.response) {
-        logger.log("info", "Successfully send to VK, msg id = %d", resp.response);
-    } else {
-        logger.log("error", "Error while sending to VK: %s", resp.error.error_msg);
-    }
+var vkQueue = new VkQueue(5000, function (key, message) {
+    vk.request('messages.send', {'message': message, 'peer_id': config.vk.peerId}, function (resp) {
+        if (resp.response) {
+            logger.log("info", "Successfully send to VK, msg id = %d", resp.response);
+            vkQueue.remove(key); //if message delivered successful, remove it from queue
+        } else {
+            logger.log("error", "Error while sending to VK: %s", resp.error.error_msg);
+        }
+    })
 });
 
 vk.on('http-error', function (e) {
     logger.log("error", "HTTP error while sending message to VK: %s", e)
 });
 
-vk.on('parse-error', function (_e) {
+vk.on('parse-error', function (e) {
     logger.log("error", "HTTP error while parsing json from VK: %s", e);
 });
 
@@ -132,7 +134,7 @@ mailListener.on("server:disconnected", function () {
 mailListener.on("mail", function (mail, seqno, attributes) {
     var message = extractMail(mail);
     logger.log("info", "Got new email: %s", eol + message);
-    sendToVK("&#9993;&#9993;&#9993;" + eol + message);
+    vkQueue.add(uuid.v1(), "&#9993;&#9993;&#9993;" + eol + message);
 });
 
 mailListener.on("error", function (err) {
