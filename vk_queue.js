@@ -10,14 +10,17 @@ var HashMap = require("hashmap");
  * @constructor
  */
 var VkQueue = function (period, onTimer) {
-    var hashMap = new HashMap();
-    this.hashMap = hashMap;
+    var that = this;
+    this.hashMap = new HashMap();
+    this.shutdown_signal = false;
 
-    setInterval(function() {
-        var keys =  hashMap.keys();
+    var interval = setInterval(function() {
+        var keys =  that.hashMap.keys();
+        if (keys.length == 0 && that.shutdown_signal)
+            clearInterval(interval); //stop timer if queue is empty
         for (var i =0; i<keys.length; i++) {
             var key = keys[i];
-            var value = hashMap.get(key);
+            var value = that.hashMap.get(key);
             var currTime = new Date().getTime();
             if (!value.in_process || (currTime - value.timestamp > 60*1000 /*retry after 1 minute */) ) {
                 value.in_process = true;
@@ -37,7 +40,9 @@ VkQueue.prototype.remove = function(key) {
     this.hashMap.remove(key);
 };
 
-
+VkQueue.prototype.shutdown = function () {
+    this.shutdown_signal = true;
+};
 
 module.exports = VkQueue;
 

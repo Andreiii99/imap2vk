@@ -121,14 +121,13 @@ function cutOffSignature(messageBody) {
     return messageBody;
 }
 
-
 mailListener.on("server:connected", function () {
     logger.log("info", "Successfully connected to mail server");
-
 });
 
 mailListener.on("server:disconnected", function () {
     logger.log("info", "Disconnected from mail server");
+    vkQueue.shutdown(); //graceful shutdown queue to exit process
 });
 
 mailListener.on("mail", function (mail, seqno, attributes) {
@@ -139,6 +138,8 @@ mailListener.on("mail", function (mail, seqno, attributes) {
 
 mailListener.on("error", function (err) {
     logger.log("error", "Error while checking mail: %s", err);
+    //It is not good way but workaround for error 'This socket has been ended by the other party'
+    vkQueue.shutdown(); //graceful shutdown queue to exit process
 });
 
 /* ========= Start mail server listening ============= */
